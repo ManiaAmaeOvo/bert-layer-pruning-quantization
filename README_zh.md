@@ -126,14 +126,15 @@ pip install -r requirements.txt
 ## 引用
 如果您的研究从本项目中获益，请考虑以下方式引用。
 ```bibtex
-@misc{yang2025bertlayerpruning,
-  author       = {Yang, Rui},
-  title        = {BERT Layer Pruning and Quantization},
-  year         = {2025},
-  publisher    = {GitHub},
-  journal      = {GitHub repository},
-  howpublished = {\url{https://github.com/ManiaAmaeOvo/bert-layer-pruning-quantization}}
+@misc{yang2025bertprune,      # Key: 自定义唯一标识
+  author       = {Yang, Rui},  # 作者
+  title        = {BERT Layer Pruning & Quantization (Undergrad Thesis)}, # 项目/论文标题
+  year         = {2025},       # 发布年份
+  publisher    = {GitHub},     # 发布平台
+  journal      = {GitHub repository (Thesis Project)}, # 类型说明
+  howpublished = {\url{https://github.com/ManiaAmaeOvo/bert-layer-pruning-quantization}} # 仓库 URL
 }
+
 ```
 
 ## 许可证 (License)

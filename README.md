@@ -129,14 +129,15 @@ The scripts in the `eva/` directory generate the final comparison reports.
 If this work is useful for your research, please consider citing it as follows:
 
 ```bibtex
-@misc{yang2025bertlayerpruning,
-  author       = {Yang, Rui},
-  title        = {BERT Layer Pruning and Quantization},
-  year         = {2025},
-  publisher    = {GitHub},
-  journal      = {GitHub repository},
-  howpublished = {\url{https://github.com/ManiaAmaeOvo/bert-layer-pruning-quantization}}
+@misc{yang2025bertprune,      #  Custom unique key
+  author       = {Yang, Rui},  #  Author
+  title        = {BERT Layer Pruning & Quantization (Undergrad Thesis)}, #  Project/Thesis Title
+  year         = {2025},       #  Year of publication
+  publisher    = {GitHub},     #  Publishing platform
+  journal      = {GitHub repository (Thesis Project)}, # Type of resource
+  howpublished = {\url{https://github.com/ManiaAmaeOvo/bert-layer-pruning-quantization}} #  Repository URL
 }
+
 ```
 ## License
 This project is licensed under the [MIT License](LICENSE).
