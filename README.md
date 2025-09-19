@@ -93,8 +93,8 @@ The results were reproduced in the following environment:
 First, clone the repository and create a clean Python environment using Conda.
 ```bash
 # 1. Clone the repository
-git clone <your-repo-url>
-cd <your-repo-name>
+git clone https://github.com/ManiaAmaeOvo/bert-layer-pruning-quantization/
+cd https://github.com/ManiaAmaeOvo/bert-layer-pruning-quantization/
 
 # 2. Create and activate a Conda environment
 conda create -n model_opt python=3.12 -y

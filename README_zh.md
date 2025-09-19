@@ -90,11 +90,11 @@
 * **核心库**: PyTorch 2.5.1+cu121, Transformers, Datasets, Optimum
 
 ### 2. 环境配置
-首先，克隆本仓库，并建议使用Conda创建一个干净的Python 3.10+环境。
+首先，克隆本仓库，并建议使用Conda创建一个干净的Python 3.12+环境。
 ```bash
 # 1. 克隆仓库
-git clone <your-repo-url>
-cd <your-repo-name>
+git clone https://github.com/ManiaAmaeOvo/bert-layer-pruning-quantization/
+cd https://github.com/ManiaAmaeOvo/bert-layer-pruning-quantization/
 
 # 2. 创建并激活Conda环境
 conda create -n model_opt python=3.12 -y
