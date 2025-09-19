@@ -28,16 +28,6 @@ Experiments were conducted on both `bert-base-uncased` and `bert-large-uncased` 
   <img src="figure/large_bert_layer_sensitivity_analysis.svg" width="45%">
 </p>
 
-#### FP16 vs. FP32 Latency Under Different Batch Sizes
-*Left: Pruned BERT-Base (8 Layers). Right: Pruned BERT-Large (16 Layers).*
-<p align="center">
-  <img src="figure/base_fp32_vs_fp16_latency_batches.svg" width="45%">
-  &nbsp;
-  <img src="figure/large_fp32_vs_fp16_latency_batches.svg" width="45%">
-</p>
-
-#### Multi-Dimensional Performance Radar Chart
-
 > **Note on Normalization:** To visualize these diverse metrics on a single radar chart, we normalized all data into a unified score ranging from $[0.1, 1]$.
 >
 >   * **Cost Indicators (Size, Latency, Memory):** Metrics where lower is better are inverted and normalized. The best-performing model (lowest value) gets a score of 1, and the worst gets 0.1. The formula is:
@@ -71,6 +61,23 @@ Experiments were conducted on both `bert-base-uncased` and `bert-large-uncased` 
 | **3. Pruned+Quantized (bert-large, 16L, FP16)** |      **447.97** |           **0.9392** |                **4.17** |              **456.82** | **N/A** | **N/A** |
 
 *Analysis: On `bert-large`, our optimization strategy is even more impressive. Pruning not only reduced the size but also **improved accuracy by 0.8%**, likely due to a regularization effect. The final `Pruned+FP16` model achieved an **88% size compression**, **65% memory reduction**, and **30% latency reduction** compared to the original `bert-large` baseline, all while achieving higher accuracy.*
+
+### In-depth Latency Analysis: The Impact of Batch Size
+
+Initial observations indicated that the latency advantages of the optimized models were not significant during small-batch inference. We hypothesized that this could be due to fixed overheads from data I/O and GPU kernel launches masking the actual computational gains. To verify this hypothesis and more comprehensively evaluate model performance, we conducted a series of latency comparison experiments across various batch sizes.
+
+#### Latency Comparison: FP16 vs. Pruned FP32 Across Batch Sizes
+
+<p align="center">
+  <img src="figure/model_latency_comparison.svg" width="45%">
+  &nbsp;
+  <img src="figure/large_model_latency_comparison.svg" width="45%">
+</p>
+
+* **Analysis**: The experimental results clearly demonstrate that the latency advantages of different optimization strategies are highly dependent on batch size.
+    * **Layer Pruning (Pruned FP32 vs. Baseline FP32)**: The effect of layer pruning is **stable and significant across all batch sizes**, directly reflecting a consistent latency reduction due to the decreased computational workload.
+    * **FP16 Quantization (Pruned FP16 vs. Pruned FP32)**: The advantages of FP16 quantization are **fully realized at larger batch sizes**. At small batch sizes (1-8), its latency is comparable to the FP32 model. However, as the batch size increases (16-64), the FP16 model can more effectively leverage the GPU's Tensor Cores for parallel computation, making its performance advantage increasingly pronounced and widening the gap with its FP32 counterpart.
+    * **A Noteworthy Phenomenon**: The `Pruned FP16` model exhibits a unique characteristic where its absolute latency **decreases at larger batch sizes** (32 and 64). This strongly suggests that the computational load only becomes large enough at these sizes to fully saturate the GPU's specialized FP16 hardware units, allowing them to execute the task with maximum efficiency.
 
 ## How to Reproduce
 

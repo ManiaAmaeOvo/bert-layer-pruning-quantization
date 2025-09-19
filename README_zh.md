@@ -28,13 +28,6 @@
   <img src="figure/large_bert_layer_sensitivity_analysis.svg" width="45%">
 </p>
 
-#### 不同批量下的FP16与FP32延迟对比
-*左: 剪枝后 BERT-Base (8层). 右: 剪枝后 BERT-Large (16层).*
-<p align="center">
-  <img src="figure/base_fp32_vs_fp16_latency_batches.svg" width="45%">
-  &nbsp;
-  <img src="figure/large_fp32_vs_fp16_latency_batches.svg" width="45%">
-</p>
 
 #### 多维度性能雷达图
 
@@ -69,6 +62,22 @@
 | **3. Pruned+Quantized (bert-large, 16L, FP16)** |      **447.97** |           **0.9392** |                **4.17** |              **456.82** | **N/A** | **N/A** |
 
 *分析：在`bert-large`上，本项目的优化策略效果更为惊人。剪枝不仅没有降低精度，反而**提升了0.8%**，这可能是因为移除了冗余层，起到了正则化的效果。最终的`剪枝+FP16`模型，相比原始`bert-large`，**体积压缩了88%**，**显存减少了65%**，**延迟降低了30%**，同时**精度更高**，展现了无与伦比的综合性能。*
+### 深度延迟分析：批量大小（Batch Size）的影响
+
+初步观察发现，在小批量推理时，优化后模型的延迟（Latency）优势似乎并不显著。我们推断这可能是由于在小批量下，数据IO和GPU Kernel启动的固定开销（Overhead）掩盖了模型计算本身的增益。为了验证这一假设并更全面地评估模型性能，我们进行了一系列跨不同批量大小的延迟对比实验。
+
+#### 不同批量下的FP16与剪枝前后的FP32延迟对比
+
+<p align="center">
+  <img src="figure/model_latency_comparison.svg" width="45%">
+  &nbsp;
+  <img src="figure/large_model_latency_comparison.svg" width="45%">
+</p>
+
+* **分析**：实验结果清晰地表明，不同优化策略的延迟优势与批量大小密切相关。
+    * **层剪枝 (Pruned FP32 vs Baseline FP32)**：层剪枝的效果在**所有批量大小下都是稳定且显著的**，直接反映了计算量的减少带来了延迟的稳定降低。
+    * **FP16量化 (Pruned FP16 vs Pruned FP32)**：FP16量化的优势在**大批量时才完全体现**。在小批量（1-8）时，其延迟与FP32模型相近；但随着批量增大（16-64），FP16能更充分地利用GPU的Tensor Core进行并行计算，性能优势愈发明显，与FP32模型的差距显著拉开。
+    * **值得注意的现象**：`Pruned FP16` 模型在批量大小为32和64时，其绝对延迟**不升反降**。这有力地证明了，只有当计算负载足够大时，GPU针对FP16的硬件优化单元才能被完全“唤醒”和饱和，从而以极高的效率完成计算任务。
 
 ## 如何复现
 
