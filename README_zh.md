@@ -124,9 +124,16 @@ pip install -r requirements.txt
 > **重要提示**: 在运行评估脚本前，请确保`MODELS_TO_EVALUATE`列表中每个模型的`path`都指向您自己生成的、正确的模型文件目录。
 
 ## 引用
-如果您的研究从本项目中获益，请考虑引用。
-```
-(待补充)
+如果您的研究从本项目中获益，请考虑以下方式引用。
+```bibtex
+@misc{yang2025bertlayerpruning,
+  author       = {Yang, Rui},
+  title        = {BERT Layer Pruning and Quantization},
+  year         = {2025},
+  publisher    = {GitHub},
+  journal      = {GitHub repository},
+  howpublished = {\url{https://github.com/ManiaAmaeOvo/bert-layer-pruning-quantization}}
+}
 ```
 
 ## 许可证 (License)

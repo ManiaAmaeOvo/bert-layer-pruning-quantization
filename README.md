@@ -125,10 +125,17 @@ The scripts in the `eva/` directory generate the final comparison reports.
 > **Important Note:** Before running the evaluation scripts, ensure the `MODELS_TO_EVALUATE` list in each script correctly points to your generated model artifacts.
 
 ## Citation
-If this work is useful for your research, please consider citing:
-```
-(To be added)
-```
+If this work is useful for your research, please consider citing it as follows:
 
+```bibtex
+@misc{yang2025bertlayerpruning,
+  author       = {Yang, Rui},
+  title        = {BERT Layer Pruning and Quantization},
+  year         = {2025},
+  publisher    = {GitHub},
+  journal      = {GitHub repository},
+  howpublished = {\url{https://github.com/ManiaAmaeOvo/bert-layer-pruning-quantization}}
+}
+```
 ## License
 This project is licensed under the [MIT License](LICENSE).
