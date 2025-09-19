@@ -43,7 +43,8 @@ Experiments were conducted on both `bert-base-uncased` and `bert-large-uncased` 
 >   * **Cost Indicators (Size, Latency, Memory):** Metrics where lower is better are inverted and normalized. The best-performing model (lowest value) gets a score of 1, and the worst gets 0.1. The formula is:
 >     $$\text{Score} = \alpha + (1 - \alpha) \times \frac{\max(X) - x}{\max(X) - \min(X)}$$
 >   * **Benefit Indicators (Accuracy):** Metrics where higher is better are normalized directly. To better reflect performance in the high-accuracy range, we mapped accuracy to a fixed semantic range of `[0.90, 0.94]`. The formula is:
->     $$\text{Score} = \alpha + (1 - \alpha) \times \frac{x - \text{semantic\_min}}{\text{semantic\_max} - \text{semantic\_min}}$$
+>     $$\text{Score} = \alpha + (1 - \alpha) \times \frac{x - \mathrm{semantic\_min}}{\mathrm{semantic\_max} - \mathrm{semantic\_min}}$$
+
 >   * The coefficient $\\alpha$ is set to `0.1` to prevent any score from being zero, ensuring better visibility on the chart.
 >   * After this processing, all the values become **the larger, the better**, which makes the radar chart more intuitive to interpret.
 

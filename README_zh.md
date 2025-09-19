@@ -43,7 +43,7 @@
 >   * **成本型指标 (模型尺寸, 延迟, 峰值内存)**：数值越小越好的指标，我们进行逆向归一化处理。表现最佳（值最小）的模型得分为1，最差的为0.1。公式如下：
 >     $$\text{Score} = \alpha + (1 - \alpha) \times \frac{\max(X) - x}{\max(X) - \min(X)}$$
 >   * **效益型指标 (准确率)**：数值越大越好的指标，我们进行正向归一化。特别地，为更真实反映高精度区间的性能差异，我们设定了一个固定的语义范围 `[0.90, 0.94]` 进行映射。公式如下：
->     $$\text{Score} = \alpha + (1 - \alpha) \times \frac{x - \text{semantic\_min}}{\text{semantic\_max} - \text{semantic\_min}}$$
+>      $$\text{Score} = \alpha + (1 - \alpha) \times \frac{x - \mathrm{semantic\_min}}{\mathrm{semantic\_max} - \mathrm{semantic\_min}}$$
 >   * 修正系数 $\\alpha$ 设为 `0.1`，以避免归一化后的最小值为0，使可视化结果更清晰。
 >   * 经此处理，所有的数值都变成了**越大越好**，这样在雷达图上看起来会更加直观。
 ![模型性能雷达图](figure/radar.svg)
