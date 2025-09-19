@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-selfcheck.json
+*.egg-info/
+
+# Conda environment
+/model_opt/
+/final_project/
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store
+
+# Log and temporary files
+/logs/
+/wandb/
+*.log
+/qat_finetuning/
+/qat_finetuning_cpu/
+/trash/
+
+# Large model files - MOST IMPORTANT
+# We only commit the code to reproduce the models, not the models themselves.
+/models/
+/my_bert_sst2_finetuned/
+
+# Datasets cache (if stored locally)
+.cache/
+/data/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
