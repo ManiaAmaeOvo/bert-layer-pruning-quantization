@@ -119,7 +119,7 @@ Similarly, execute the notebooks in the `bert_large/` directory.
 ### 5. Final Evaluation
 The scripts in the `eva/` directory generate the final comparison reports.
 
-1.  `shoudown.py` - Generates the final comparison table for the `bert-base` series (`final_results.md`).
+1.  `showdown.py` - Generates the final comparison table for the `bert-base` series (`final_results.md`).
 2.  `showdown_large.py` - Generates the final comparison table for the `bert-large` series (`final_results_bert_large.md`).
 3.  `radar.ipynb` - Loads the final evaluation data, normalizes it, and plots the performance radar chart.
 

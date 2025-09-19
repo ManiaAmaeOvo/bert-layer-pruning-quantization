@@ -117,7 +117,7 @@ pip install -r requirements.txt
 ### 5. 最终评估
 `eva`目录包含了生成最终对比报告的脚本。
 
-1.  `shoudown.py` - 用于生成`bert-base`系列的最终对比总表 (`final_results.md`)。
+1.  `showdown.py` - 用于生成`bert-base`系列的最终对比总表 (`final_results.md`)。
 2.  `showdown_large.py` - 用于生成`bert-large`系列的最终对比总表 (`final_results_bert_large.md`)。
 3.  `radar.ipynb` - 加载最终的评估数据，进行归一化处理，并绘制最终的性能雷达图。
 
