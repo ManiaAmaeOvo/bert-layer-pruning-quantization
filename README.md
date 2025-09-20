@@ -1,72 +1,104 @@
 [English](README.md) | [中文](README_zh.md)
 
 # Large Model Compression and Acceleration via Layer Pruning and Precision Quantization
-![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)
-![PyTorch 2.5+](https://img.shields.io/badge/PyTorch-2.5+-ee4c2c.svg)
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
+![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg) ![PyTorch 2.5+](https://img.shields.io/badge/PyTorch-2.5+-ee4c2c.svg) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ## Abstract
 
-This project explores and implements a complete, end-to-end optimization pipeline for BERT-series models. Driven by **layer sensitivity analysis**, this pipeline combines **structured pruning** and **FP16 half-precision conversion** to create high-performance models for modern high-end GPUs, achieving an optimal balance between accuracy, latency, model size, and memory footprint.
+This project explores and implements a complete, end-to-end optimization pipeline for BERT-series models. The pipeline is **driven by layer sensitivity analysis** and systematically combines **structured pruning** with **multi-precision quantization** (including **FP16, INT8, and INT4**) to create high-performance models tailored for both GPU and CPU deployments. The goal is to strike the optimal balance between accuracy, latency, model size, and memory footprint.
 
-Experiments were conducted on both `bert-base-uncased` and `bert-large-uncased` models and comprehensively evaluated on the GLUE SST-2 sentiment analysis task. The results demonstrate that the proposed "Pruning + FP16" strategy, especially on large models like `bert-large`, can achieve **over 88% model compression** (*3836.7MB->447.97MB*)and **significant performance acceleration** (*6.00ms -> 4.17ms* Even better on larger batch_size)with **negligible or even improved accuracy** , proving the effectiveness and superiority of the methodology.
+Experiments were conducted on both `bert-base-uncased` and `bert-large-uncased` models, and comprehensively evaluated on the GLUE SST-2 task. Results reveal deep performance trade-offs:
+
+* **For `bert-base`**: The combination of pruning and FP16 delivers an excellent trade-off between latency and compression on GPUs. On CPUs, the **Pruned + INT8** variant is optimal, reducing latency by **60%** (\$167.87\text{ms} \to 67.02\text{ms}\$) while maintaining high accuracy.
+* **For `bert-large`**: The **Pruned + INT4** strategy achieved **95.8% model size reduction** (\$3836.7\text{MB} \to 161.7\text{MB}\$) and reduced peak GPU memory by **82.5%**, while even yielding a **+0.9% accuracy improvement** (up to `0.9404`). On CPUs, the **Pruned + INT8** variant reduced latency by **65.7%**.
+* A key finding is that **INT4 quantization**, while offering unmatched compression and memory savings, currently suffers from **significantly higher inference latency on mainstream GPUs** compared to FP32/FP16, due to costly de-quantization overhead. This highlights the practical trade-off between extreme compression and real-world inference speed.
+
+In summary, this project not only validates the huge potential of "Pruning + Quantization" strategies but also provides quantitative guidance for model selection across different deployment environments.
+
+---
 
 ## Key Techniques
-* **Sensitivity Analysis**: Precisely identifies the least important Transformer layers via layer-by-layer ablation studies.
-* **Structured Pruning**: Physically removes redundant layers based on sensitivity scores, directly reducing model depth and parameter count.
-* **Re-finetuning**: Briefly fine-tunes the pruned model to recover accuracy lost due to structural changes.
-* **FP16 Half-Precision Conversion**: Leverages modern GPU Tensor Cores to accelerate inference and reduce memory usage.
-* **Multi-Dimensional Evaluation**: Conducts a comprehensive showdown of all models across metrics like accuracy, latency, size, and peak memory usage.
+
+* **Model Sensitivity Analysis**: Systematic ablation to identify the least important Transformer layers.
+* **Structured Pruning**: Physically removes redundant layers, directly reducing model depth and parameter count.
+* **Re-finetuning**: Brief fine-tuning of pruned models to recover accuracy lost from structural changes.
+* **Multi-Precision Quantization**:
+
+  * **FP16 Half Precision**: Exploits GPU Tensor Cores for acceleration and reduced memory usage.
+  * **INT8 (PTQ)**: Post-training quantization, particularly effective on CPUs for low-latency inference.
+  * **INT4 (BitsAndBytes)**: Extreme compression for storage/memory-constrained applications.
+* **Multi-Dimensional Evaluation**: Accuracy, latency, model size, and peak memory usage are compared holistically.
+
+---
 
 ## Visualization of Results
 
 #### Layer Sensitivity Analysis
+
 *Left: BERT-Base (12 Layers). Right: BERT-Large (24 Layers).*
+
 <p align="center">
   <img src="figure/bert_layer_sensitivity_analysis.svg" width="45%">
   &nbsp;
   <img src="figure/large_bert_layer_sensitivity_analysis.svg" width="45%">
 </p>
 
-> **Note on Normalization:** To visualize these diverse metrics on a single radar chart, we normalized all data into a unified score ranging from $[0.1, 1]$.
+#### Multi-Dimensional Radar Chart
+
+> **On Normalization:** To visualize heterogeneous metrics in a single radar chart, all values are normalized into $\[0.1, 1]\$.
 >
->   * **Cost Indicators (Size, Latency, Memory):** Metrics where lower is better are inverted and normalized. The best-performing model (lowest value) gets a score of 1, and the worst gets 0.1. The formula is:
->     $$\text{Score} = \alpha + (1 - \alpha) \times \frac{\max(X) - x}{\max(X) - \min(X)}$$
->   * **Benefit Indicators (Accuracy):** Metrics where higher is better are normalized directly. To better reflect performance in the high-accuracy range, we mapped accuracy to a fixed semantic range of `[0.90, 0.94]`. The formula is:
->     $$\text{Score} = \alpha + (1 - \alpha) \times \frac{x - \mathrm{semantic\_min}}{\mathrm{semantic\_max} - \mathrm{semantic\_min}}$$
+> * **Cost Metrics (Size, Latency, Memory):** Lower is better, so inverted normalization is used. Best = 1, Worst = 0.1.
+>   $\text{Score} = \alpha + (1 - \alpha) \times \frac{\max(X) - x}{\max(X) - \min(X)}$
+> * **Benefit Metrics (Accuracy):** Higher is better, normalized within a semantic range `[0.90, 0.94]` to highlight differences at the high-accuracy regime.
+>   $\text{Score} = \alpha + (1 - \alpha) \times \frac{x - \mathrm{semantic\_min}}{\mathrm{semantic\_max} - \mathrm{semantic\_min}}$
+> * The correction factor \$\alpha\$ is set to `0.1` to avoid zero values, improving visualization clarity.
 
->   * The coefficient $\\alpha$ is set to `0.1` to prevent any score from being zero, ensuring better visibility on the chart.
->   * After this processing, all the values become **the larger, the better**, which makes the radar chart more intuitive to interpret.
+![Model Performance Radar](figure/radar.svg)
 
-![Model Performance Radar Chart](figure/radar.svg)
-
+---
 
 ## Final Results
 
-#### Bert-Base (12L -> 8L) Optimization Results
-| Model                                |   Size (MB) | Accuracy (GPU)   | Latency (GPU, ms)   | Peak GPU Mem (MB)   | Accuracy (CPU)   | Latency (CPU, ms)   |
-|:-------------------------------------|------------:|:-----------------|:--------------------|:--------------------|:-----------------|:--------------------|
-| 1. FP32 Baseline (12L)               |     1253.16 | 0.9300           | 3.23                | 428.26              | 0.9300           | 127.99              |
-| 2. INT4 BitsAndBytes (12L, GPU-Only) |       91.64 | 0.9300           | 8.92                | 106.13              | N/A              | N/A                 |
-| 3. INT8 PTQ (12L, CPU-Only)          |      173.09 | N/A              | N/A                 | N/A                 | 0.9186           | 67.03               |
-| 4. INT8 QAT (12L)                    |      418.63 | 0.9255           | 3.22                | 428.56              | 0.9255           | 132.04              |
-| 5. Pruned FP32 (8L)                  |      310.42 | 0.9278           | 2.30                | 320.98              | 0.9278           | 114.94              |
-| **6. Pruned FP16 (8L, GPU-Only)** |      **155.66** | **0.9266** | **2.28** | **169.25** | **N/A** | **N/A** |
+#### BERT-Base (12 → 8 Layers)
 
-#### Bert-Large (24L -> 16L) Optimization Results
-| Model                                       |   Size (MB) |   Accuracy (GPU) |   Latency (GPU, ms) |   Peak GPU Mem (MB) | Accuracy (CPU)   | Latency (CPU, ms)   |
-|:--------------------------------------------|------------:|-----------------:|--------------------:|--------------------:|:-----------------|:--------------------|
-| 1. Baseline (bert-large, 24L, FP32)         |     3836.7  |           0.9312 |                6.00 |             1288.91 | 0.9312           | 383.98              |
-| 2. Pruned (bert-large, 16L, FP32)           |      895.00 |           **0.9392** |                4.14 |              904.51 | **0.9392** | 288.00              |
-| **3. Pruned+Quantized (bert-large, 16L, FP16)** |      **447.97** |           **0.9392** |                **4.17** |              **456.82** | **N/A** | **N/A** |
+| Model                     |  Size (MB) | Accuracy (GPU) | Latency (GPU, ms) | Peak GPU Mem (MB) | Accuracy (CPU) | Latency (CPU, ms) |
+| :------------------------ | ---------: | :------------- | :---------------- | :---------------- | :------------- | :---------------- |
+| Baseline (12L, FP32)      |    1253.16 | 0.9300         | 3.20              | 428.26            | 0.9300         | 167.87            |
+| Baseline (12L, INT4)      |      91.64 | 0.9300         | 9.31              | 106.13            | N/A            | N/A               |
+| Baseline (12L, PTQ INT8)  |     173.09 | N/A            | N/A               | N/A               | 0.9186         | 87.91             |
+| Baseline (12L, QAT INT8)  |     418.63 | 0.9255         | 3.22              | 474.50            | 0.9255         | 145.98            |
+| Pruned (8L, FP32)         |     310.42 | 0.9278         | 2.25              | 366.35            | 0.9278         | 107.95            |
+| **Pruned (8L, FP16)**     | **155.66** | **0.9266**     | **2.27**          | **213.82**        | N/A            | N/A               |
+| **Pruned (8L, INT4)**     |  **74.78** | **0.9278**     | 8.96              | **113.18**        | N/A            | N/A               |
+| **Pruned (8L, PTQ INT8)** | **145.90** | N/A            | N/A               | N/A               | **0.9232**     | **67.02**         |
 
-*Analysis: On `bert-large`, our optimization strategy is even more impressive. Pruning not only reduced the size but also **improved accuracy by 0.8%**, likely due to a regularization effect. The final `Pruned+FP16` model achieved an **88% size compression**, **65% memory reduction**, and **30% latency reduction** compared to the original `bert-large` baseline, all while achieving higher accuracy.*
+**Analysis:**
 
-### In-depth Latency Analysis: The Impact of Batch Size
+* **CPU Deployment**: Pruned + PTQ INT8 achieved the best performance with `67.02ms` latency (23.8% faster than baseline INT8).
+* **Compression**: Pruned + INT4 reduced size to **74.78MB (94% smaller)** without accuracy loss, though GPU latency increased (8.96ms).
 
-Initial observations indicated that the latency advantages of the optimized models were not significant during small-batch inference. We hypothesized that this could be due to fixed overheads from data I/O and GPU kernel launches masking the actual computational gains. To verify this hypothesis and more comprehensively evaluate model performance, we conducted a series of latency comparison experiments across various batch sizes.
+---
 
-#### Latency Comparison: FP16 vs. Pruned FP32 Across Batch Sizes
+#### BERT-Large (24 → 16 Layers)
+
+| Model                      |  Size (MB) | Accuracy (GPU) | Latency (GPU, ms) | Peak GPU Mem (MB) | Accuracy (CPU) | Latency (CPU, ms) |
+| :------------------------- | ---------: | :------------- | :---------------- | :---------------- | :------------- | :---------------- |
+| Baseline (24L, FP32)       |    3836.70 | 0.9312         | 6.04              | 1288.91           | 0.9312         | 420.02            |
+| Pruned (16L, FP32)         |     895.00 | 0.9392         | 4.14              | 904.51            | 0.9392         | 281.94            |
+| **Pruned (16L, FP16)**     | **447.97** | **0.9392**     | **4.25**          | **456.82**        | N/A            | N/A               |
+| **Pruned (16L, INT4)**     | **161.70** | **0.9404**     | 17.26             | **224.71**        | N/A            | N/A               |
+| **Pruned (16L, PTQ INT8)** | **315.24** | N/A            | N/A               | N/A               | **0.9140**     | **144.11**        |
+
+**Analysis:**
+
+* **Accuracy Gains**: Surprisingly, Pruned + INT4 not only achieved **95.8% compression** but also improved accuracy (+0.9%), possibly due to quantization noise acting as regularization.
+* **CPU Speedup**: Pruned + PTQ INT8 reduced CPU latency from `420.02ms` → `144.11ms` (**2.9× faster**).
+* **Latency Trade-off**: On GPUs, INT4 suffered from high de-quantization overhead (17.26ms, \~4× slower than FP16).
+
+---
+
+#### Batch Size Effects on Latency
 
 <p align="center">
   <img src="figure/model_latency_comparison.svg" width="45%">
@@ -74,29 +106,32 @@ Initial observations indicated that the latency advantages of the optimized mode
   <img src="figure/large_model_latency_comparison.svg" width="45%">
 </p>
 
-* **Analysis**: The experimental results clearly demonstrate that the latency advantages of different optimization strategies are highly dependent on batch size.
-    * **Layer Pruning (Pruned FP32 vs. Baseline FP32)**: The effect of layer pruning is **stable and significant across all batch sizes**, directly reflecting a consistent latency reduction due to the decreased computational workload.
-    * **FP16 Quantization (Pruned FP16 vs. Pruned FP32)**: The advantages of FP16 quantization are **fully realized at larger batch sizes**. At small batch sizes (1-8), its latency is comparable to the FP32 model. However, as the batch size increases (16-64), the FP16 model can more effectively leverage the GPU's Tensor Cores for parallel computation, making its performance advantage increasingly pronounced and widening the gap with its FP32 counterpart.
-    * **A Noteworthy Phenomenon**: The `Pruned FP16` model exhibits a unique characteristic where its absolute latency **decreases at larger batch sizes** (32 and 64). This strongly suggests that the computational load only becomes large enough at these sizes to fully saturate the GPU's specialized FP16 hardware units, allowing them to execute the task with maximum efficiency.
+**Observations:**
+
+* **Pruning (FP32)**: Stable latency reduction across all batch sizes.
+* **FP16**: Latency advantage only emerges at larger batch sizes (≥16), where Tensor Cores are fully utilized.
+* **Notable Case**: Pruned FP16 latency even *decreased* at batch size 32–64, confirming GPU hardware optimization saturation.
+
+---
 
 ## How to Reproduce
 
-### 1. Experiment Environment
-The results were reproduced in the following environment:
+### 1. Environment
+
 * **OS**: Linux
 * **GPU**: NVIDIA RTX 5090 32GB
 * **CUDA**: 12.8
 * **Python**: 3.12
-* **Key Libraries**: PyTorch 2.5.1+cu121, Transformers, Datasets, Optimum
+* **Core Libraries**: PyTorch 2.5.1+cu121, Transformers, Datasets, Optimum, BitsAndBytes
 
 ### 2. Setup
-First, clone the repository and create a clean Python environment using Conda.
-```bash
-# 1. Clone the repository
-git clone https://github.com/ManiaAmaeOvo/bert-layer-pruning-quantization/
-cd https://github.com/ManiaAmaeOvo/bert-layer-pruning-quantization/
 
-# 2. Create and activate a Conda environment
+```bash
+# 1. Clone repository
+git clone https://github.com/ManiaAmaeOvo/bert-layer-pruning-quantization/
+cd bert-layer-pruning-quantization/
+
+# 2. Create environment
 conda create -n model_opt python=3.12 -y
 conda activate model_opt
 
@@ -104,47 +139,44 @@ conda activate model_opt
 pip install -r requirements.txt
 ```
 
-### 3. Workflow for `bert-base`
-Execute the Jupyter Notebooks in the `bert_base/` directory in the following order.
+### 3. BERT-Base Workflow
 
-> **Important Note:** Before running each notebook, please check and modify the model input/output paths at the beginning of the file to match your directory structure.
+1. `bert_base_fine.ipynb` – Fine-tune baseline (`bert-base-uncased`) on SST-2.
+2. `base_ablation_study.ipynb` – Sensitivity analysis via layer ablation.
+3. `bert_base_pruned_fine.ipynb` – Prune & re-finetune.
+4. `base_pruned_fp16.ipynb` – Convert to FP16 and evaluate.
+5. `base_pruned_int4_bnb.ipynb`, etc. – Quantization (INT8/INT4).
 
-1.  `bert_base_fine.ipynb` - **Fine-tune Baseline**: Fine-tunes the standard `bert-base-uncased` on SST-2 to generate the base model for all subsequent optimizations.
-2.  `base_ablation_study.ipynb` - **Sensitivity Analysis**: Loads the fine-tuned model and performs an ablation study to generate layer sensitivity scores.
-3.  `bert_base_pruned_fine.ipynb` - **Pruning & Re-finetuning**: Removes the least important layers and re-finetunes the pruned model to recover accuracy.
-4.  `base_pruned_fp16.ipynb` - **FP16 Conversion & Test**: Converts the pruned model to FP16 and runs a performance comparison.
+### 4. BERT-Large Workflow
 
-### 4. Workflow for `bert-large`
-Similarly, execute the notebooks in the `bert_large/` directory.
+1. `bert_large_fine.ipynb` – Fine-tune baseline.
+2. `bert_large_ablation.ipynb` – Sensitivity analysis.
+3. `bert_large_fp16.ipynb` – Pruning + fine-tuning + FP16 conversion.
+4. `large_pruned_int4_bnb.ipynb`, etc. – Quantization.
 
-> **Important Note:** Please verify and update the model paths in each notebook before running.
+### 5. Evaluation
 
-1.  `bert_large_fine.ipynb` - **Fine-tune Baseline**: Fine-tunes the `bert-large-uncased` model.
-2.  `bert_large_ablation.ipynb` - **Sensitivity Analysis**: Performs sensitivity analysis on the fine-tuned `bert-large` model.
-3.  `bert_large_fp16.ipynb` - **Pruning, Re-finetuning & FP16 Conversion**: An integrated notebook for the entire optimization pipeline on `bert-large`.
+* `eva/showdown.py` – Final results table (BERT-Base).
+* `eva/showdown_large.py` – Final results table (BERT-Large).
+* `eva/radar.ipynb` – Normalize and plot radar charts.
 
-### 5. Final Evaluation
-The scripts in the `eva/` directory generate the final comparison reports.
-
-1.  `showdown.py` - Generates the final comparison table for the `bert-base` series (`final_results.md`).
-2.  `showdown_large.py` - Generates the final comparison table for the `bert-large` series (`final_results_bert_large.md`).
-3.  `radar.ipynb` - Loads the final evaluation data, normalizes it, and plots the performance radar chart.
-
-> **Important Note:** Before running the evaluation scripts, ensure the `MODELS_TO_EVALUATE` list in each script correctly points to your generated model artifacts.
+---
 
 ## Citation
-If this work is useful for your research, please consider citing it as follows:
 
 ```bibtex
-@misc{yang2025bertprune,      #  Custom unique key
-  author       = {Yang, Rui},  #  Author
-  title        = {BERT Layer Pruning & Quantization (Undergrad Thesis)}, #  Project/Thesis Title
-  year         = {2025},       #  Year of publication
-  publisher    = {GitHub},     #  Publishing platform
-  journal      = {GitHub repository (Thesis Project)}, # Type of resource
-  howpublished = {\url{https://github.com/ManiaAmaeOvo/bert-layer-pruning-quantization}} #  Repository URL
+@misc{yang2025bertprune,
+  author       = {Yang, Rui},
+  title        = {BERT Layer Pruning & Quantization (Undergrad Thesis)},
+  year         = {2025},
+  publisher    = {GitHub},
+  journal      = {GitHub repository (Thesis Project)},
+  howpublished = {\url{https://github.com/ManiaAmaeOvo/bert-layer-pruning-quantization}}
 }
-
 ```
+
+---
+
 ## License
-This project is licensed under the [MIT License](LICENSE).
+
+This project is released under the [MIT License](LICENSE).
